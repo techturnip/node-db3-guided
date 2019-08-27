@@ -1,9 +1,15 @@
+// ROUTER IMPORTS / INITIALIZATION
+// --------------------------------------------|
+// bring in express
 const express = require('express')
-
+// brings in database helper methods
 const Users = require('./user-model.js')
-
+// initialize express router
 const router = express.Router()
-
+// --------------------------------------------|
+// ROUTER ENDPOINTS ---------------------------|
+// --------------------------------------------|
+// GET Request returns all users
 router.get('/', async (req, res) => {
   try {
     const users = await Users.find()
@@ -14,7 +20,8 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Failed to get users' })
   }
 })
-
+// --------------------------------------------|
+// GET Request returns user by id
 router.get('/:id', async (req, res) => {
   const { id } = req.params
 
@@ -27,53 +34,57 @@ router.get('/:id', async (req, res) => {
     res.status(404).json({ message: 'Could not find user with given id.' })
   }
 })
-
-router.post('/', (req, res) => {
+// --------------------------------------------|
+// POST Request inserts new user and returns new user
+router.post('/', async (req, res) => {
   const userData = req.body
 
-  Users.add(userData)
-    .then(newUser => {
-      res.status(201).json(newUser)
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to create new user' })
-    })
-})
+  try {
+    const newUser = await Users.add(userData)
 
-router.put('/:id', (req, res) => {
+    res.status(201).json(newUser)
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Failed to create new user' })
+  }
+})
+// --------------------------------------------|
+// PUT Request updates a user by id
+router.put('/:id', async (req, res) => {
   const { id } = req.params
   const changes = req.body
 
-  Users.update(changes, id)
-    .then(user => {
-      if (user) {
-        res.json(user)
-      } else {
-        res.status(404).json({ message: 'Could not find user with given id' })
-      }
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to update user' })
-    })
-})
+  try {
+    const user = await Users.update(changes, id)
 
-router.delete('/:id', (req, res) => {
+    // if user exists ? does exist : does not exist
+    user
+      ? res.json(user)
+      : res.status(404).json({ message: 'Could not find user with given id' })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Failed to update user' })
+  }
+})
+// --------------------------------------------|
+// DELETE Request removes a user
+router.delete('/:id', async (req, res) => {
   const { id } = req.params
 
-  Users.remove(id)
-    .then(count => {
-      if (count) {
-        res.json({ removed: count })
-      } else {
-        res.status(404).json({ message: 'Could not find user with given id' })
-      }
-    })
-    .catch(err => {
-      res.status(500).json({ message: 'Failed to delete user' })
-    })
-})
+  try {
+    const deleted = await Users.remove(id)
 
-// all posts by user id
+    // if deleted ? deleted : failed
+    deleted
+      ? res.json({ removed: deleted })
+      : res.status(404).json({ message: 'Could not find user with given id' })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Failed to delete user' })
+  }
+})
+// --------------------------------------------|
+// GET Request returns all posts by user
 router.get('/:id/posts', async (req, res) => {
   const { id } = req.params
 
@@ -86,5 +97,6 @@ router.get('/:id/posts', async (req, res) => {
     res.status(500).json({ message: 'Failed to get posts' })
   }
 })
-
+// --------------------------------------------|
+// EXPORT ROUTER
 module.exports = router
